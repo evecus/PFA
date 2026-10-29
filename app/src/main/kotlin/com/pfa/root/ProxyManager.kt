@@ -71,8 +71,8 @@ class ProxyManager(private val context: Context) {
             File(context.filesDir, "box.nft").writeText(buildNftScript(settings))
         }
 
-        // 4. 启动前配置检查（sing-box 专用）
-        if (settings.startCheck && profile.core == CoreType.SING_BOX) {
+        // 4. 启动前配置检查（仅 sing-box 且使用默认参数时；自定义参数场景不做预检）
+        if (settings.startCheck && profile.core == CoreType.SING_BOX && profile.extraArgs.isBlank()) {
             val chk = RootShell.runScript("'$binPath' check -c '$runConfig' 2>&1")
             val out = (chk.stdout + "\n" + chk.stderr).trim()
             if (!chk.ok || out.contains("error", ignoreCase = true))
@@ -116,19 +116,27 @@ class ProxyManager(private val context: Context) {
         )
     }
 
-    /** 按核心类型拼接启动命令行（对齐 box.service start_bin） */
+    /**
+     * 拼接启动命令行。
+     * 运行参数（profile.extraArgs）语义：完整的核心启动参数。
+     *  - 非空：原样使用，最终命令 = /data/adb/proxy/bin/<核心名> <运行参数>
+     *    例：填 "-d /data/adb/proxy/run" → /data/adb/proxy/bin/mihomo -d /data/adb/proxy/run
+     *  - 留空：按核心类型生成默认参数（配置文件取首页选中的，已复制到 run/）
+     */
     private fun buildLaunchCommand(profile: Profile): String {
         val bin = "${ProxyPaths.BIN_DIR}/${profile.core.binaryName}"
         val conf = "${ProxyPaths.RUN_DIR}/${profile.configFile}"
-        val args = profile.extraArgs
-        val coreArgs = when (profile.core) {
-            CoreType.SING_BOX -> "run -c '$conf'"
-            CoreType.MIHOMO, CoreType.CLASH -> "-d '${ProxyPaths.RUN_DIR}' -f '$conf'"
-            CoreType.HYSTERIA, CoreType.ANT -> "-c '$conf'"
+        val args = profile.extraArgs.trim()
+        val coreArgs = args.ifBlank {
+            when (profile.core) {
+                CoreType.SING_BOX -> "run -c '$conf'"
+                CoreType.MIHOMO, CoreType.CLASH -> "-d '${ProxyPaths.RUN_DIR}' -f '$conf'"
+                CoreType.HYSTERIA, CoreType.ANT -> "-c '$conf'"
+            }
         }
         val pidFile = "${ProxyPaths.RUN_DIR}/${profile.core.binaryName}.pid"
         // setsid 让核心脱离 shell 会话常驻；输出丢弃（MVP 不采集核心日志）
-        return "setsid '$bin' $coreArgs $args >/dev/null 2>&1 </dev/null & echo \$! > '$pidFile'"
+        return "setsid '$bin' $coreArgs >/dev/null 2>&1 </dev/null & echo \$! > '$pidFile'"
     }
 
     /** 轮询 pidof 取 PID（对齐 box.service wait_bin_listen 思路） */

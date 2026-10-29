@@ -13,7 +13,7 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "0.1.0-mvp"
+        versionName = "1.0.0"
     }
 
     buildTypes {
@@ -23,6 +23,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+    
+    signingConfigs {
+        release {
+            def envStore = System.getenv("RELEASE_STORE_FILE")
+            if (envStore != null && file(envStore).exists()) {
+                storeFile file(envStore)
+                storePassword System.getenv("RELEASE_STORE_PASSWORD")
+                keyAlias System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+            }
         }
     }
 

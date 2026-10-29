@@ -113,9 +113,19 @@ fun HomeScreen(vm: MainViewModel) {
                 ) { vm.selectConfig(it) }
 
                 LabeledTextField(
-                    label = "运行参数（追加到启动命令，可留空）",
+                    label = "运行参数（完整核心启动参数，可留空）",
                     value = profile.extraArgs,
+                    singleLine = false,
                     onValueChange = { vm.updateExtraArgs(it) }
+                )
+
+                Text(
+                    "填写的参数将原样作为核心启动参数：/data/adb/proxy/bin/" +
+                        "${profile.core.binaryName} ${profile.extraArgs.trim()}\n" +
+                        "例：-d /data/adb/proxy/run　留空则自动附加选中配置文件的默认参数",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
