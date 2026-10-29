@@ -27,6 +27,20 @@ enum class CoreType {
     companion object {
         fun fromBinaryName(name: String): CoreType? =
             entries.firstOrNull { it.binaryName == name }
+
+        /**
+         * 按上传的二进制文件名推断核心类型：
+         * 精确匹配 binaryName，否则按名称包含关键字识别（支持 mihomo-alpha 等改名核心）。
+         */
+        fun detect(name: String): CoreType =
+            fromBinaryName(name) ?: when {
+                name.contains("sing-box") || name.contains("singbox") -> SING_BOX
+                name.contains("mihomo") -> MIHOMO
+                name.contains("clash") -> CLASH
+                name.contains("hysteria") -> HYSTERIA
+                name.contains("ant") -> ANT
+                else -> SING_BOX
+            }
     }
 }
 
@@ -89,12 +103,19 @@ data class Profile(
     val name: String = "默认",
     val core: CoreType = CoreType.SING_BOX,
 
+    /** 实际使用的核心二进制文件名（bin 目录下），为空时回退 core.binaryName */
+    val binaryName: String = "",
+
     /** profiles 目录下的配置文件名，例如 config.json */
     val configFile: String = "",
 
-    /** 追加到核心启动命令的运行参数，例如 "-C /data/adb/proxy" 或 "--disable-color" */
+    /** 完整核心启动参数；留空时按核心类型生成默认参数 */
     val extraArgs: String = ""
-)
+) {
+    /** 实际执行的二进制文件名 */
+    val bin: String
+        get() = binaryName.ifBlank { core.binaryName }
+}
 
 /**
  * 全局代理设置，对应 box.config 中的防火墙/路由/DNS 等选项（设置页编辑）。

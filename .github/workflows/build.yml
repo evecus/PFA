@@ -39,10 +39,15 @@ jobs:
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: ./gradlew assembleRelease --no-daemon
+          
+      
+      - name: Move and rename APK
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/*.apk out/PFA.apk
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: app-debug
-          path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
+          tag_name: test
+          files: out/PFA.apk

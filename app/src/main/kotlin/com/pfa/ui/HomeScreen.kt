@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.pfa.domain.CoreType
 import com.pfa.domain.ProxyPaths
 import com.pfa.viewmodel.MainViewModel
 
@@ -85,23 +84,19 @@ fun HomeScreen(vm: MainViewModel) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("启动配置", style = MaterialTheme.typography.titleMedium)
 
-                EnumDropdown(
-                    label = "代理核心",
-                    value = profile.core,
-                    values = CoreType.entries.toList(),
-                    display = { core ->
-                        if (bins.contains(core.binaryName)) core.binaryName
-                        else "${core.binaryName}（未上传）"
-                    }
-                ) { vm.selectCore(it) }
+                StringDropdown(
+                    label = "代理核心（已上传）",
+                    value = profile.bin,
+                    values = bins
+                ) { vm.selectCoreBinary(it) }
 
                 Text(
-                    if (bins.contains(profile.core.binaryName))
-                        "核心路径: ${ProxyPaths.BIN_DIR}/${profile.core.binaryName}"
+                    if (bins.contains(profile.bin))
+                        "核心路径: ${ProxyPaths.BIN_DIR}/${profile.bin}"
                     else
-                        "提示: 请先到「管理」页上传 ${profile.core.binaryName} 到 ${ProxyPaths.BIN_DIR}",
+                        "提示: 请先到「管理」页上传核心二进制到 ${ProxyPaths.BIN_DIR}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (bins.contains(profile.core.binaryName))
+                    color = if (bins.contains(profile.bin))
                         MaterialTheme.colorScheme.onSurfaceVariant
                     else MaterialTheme.colorScheme.error
                 )
@@ -121,7 +116,7 @@ fun HomeScreen(vm: MainViewModel) {
 
                 Text(
                     "填写的参数将原样作为核心启动参数：/data/adb/proxy/bin/" +
-                        "${profile.core.binaryName} ${profile.extraArgs.trim()}\n" +
+                        "${profile.bin} ${profile.extraArgs.trim()}\n" +
                         "例：-d /data/adb/proxy/run　留空则自动附加选中配置文件的默认参数",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,

@@ -25,7 +25,9 @@
 ## 功能（MVP）
 
 - **root 检测**：启动时通过 `Shell.getShell()` 建立 su 会话并触发 Magisk/KernelSU/APatch 授权弹窗，之后再查询 `isAppGrantedRoot()`（修复了 shell 未建立时永远检测不到 root 的问题）
-- 首页选择核心 + 配置文件 + 运行参数 → 启动时：校验二进制 → 复制配置到 run/ →（sing-box `check`）→ `setsid` 拉起核心 → 配置 fwmark 策略路由 → 加载 nftables
+- 首页选择核心（**仅列出已上传的核心**）+ 配置文件 + 运行参数 → 启动时：校验二进制 → 复制配置到 run/ →（sing-box `check`，仅默认参数时）→ `setsid` 拉起核心 → 配置 fwmark 策略路由 → 加载 nftables
+- **防火墙/防回环对齐 box4（nft 后端）**：`mangle_pre`（socket DIVERT、iif tun/lo 防回环 return、DNS skip、intranet return）+ `mangle_out`（本机流量打标，核心 owner bypass 防回环，黑白名单按包名→uid 应用）+ `filter_out`（reject 核心连自身 tproxy 端口）+ `filter_in/fwd`（仅 tun 时放行）+ `nat_pre/nat_out`（fake-ip ping 劫持、DNS 劫持含本机方向且核心 owner return、redir 仅 iif lo）；内核能力探测（tproxy/socket/nat），缺 tproxy 时 TCP 自动降级 redir、UDP 降级不代理；规则全部位于独立 `table ip/ip6 box`，先 `add+delete` 原子替换旧表，清理即 `delete table`
+- **运行参数为完整核心启动参数**：非空时原样使用（最终命令 = `/data/adb/proxy/bin/<核心名> <运行参数>`，如填 `-d /data/adb/proxy/run`）；留空时按核心类型自动生成默认参数（sing-box `run -c run/<配置>`、mihomo/clash `-d run -f run/<配置>`、hysteria/ant `-c run/<配置>`）
 - 停止：杀进程 → 清空路由表/规则 → 删除 nft 表；「一键还原」防配错断网
 - 实时状态轮询（PID / 内存）与操作日志
 - 文件导入经「app 缓存 + root cp」落地，无需存储权限

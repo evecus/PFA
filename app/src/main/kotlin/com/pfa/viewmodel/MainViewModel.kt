@@ -88,8 +88,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     // ---------- 首页选择 ----------
-    fun selectCore(core: CoreType) {
-        _profile.value = _profile.value.copy(core = core)
+    /** 选择核心：下拉项来自 bin 目录已上传的二进制文件名，类型按名称智能识别 */
+    fun selectCoreBinary(binaryName: String) {
+        _profile.value = _profile.value.copy(
+            core = CoreType.detect(binaryName),
+            binaryName = binaryName
+        )
         persistProfile()
     }
 
@@ -133,7 +137,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- 启停 ----------
     fun start() = viewModelScope.launch(Dispatchers.IO) {
         val p = _profile.value
-        appendLog(">> 启动 ${p.core.binaryName}，配置 ${p.configFile.ifBlank { "（未选择）" }} ...")
+        appendLog(">> 启动 ${p.bin}，配置 ${p.configFile.ifBlank { "（未选择）" }} ...")
         val r = proxy.start(p, _settings.value)
         appendLog(r.message)
         if (r.ok) {
@@ -194,6 +198,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             if (dir == ProxyPaths.PROFILES_DIR && _profile.value.configFile == name) {
                 selectConfig("")
             }
+            if (dir == ProxyPaths.BIN_DIR && _profile.value.bin == name) {
+                // 删除的是当前选中的核心：清空选择，待用户重新选择
+                _profile.value = _profile.value.copy(binaryName = "")
+                persistProfile()
+            }
             refreshFiles()
         } else {
             appendLog("删除失败: $name")
@@ -214,7 +223,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun pollOnce() {
-        val s = proxy.status(_profile.value.core.binaryName)
+        val s = proxy.status(_profile.value.bin)
         _status.value = s
         if (!s.running) _running.value = false
     }
