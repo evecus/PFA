@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose 项目使用 Material3 主题桥接，实际配色由 Compose Theme 控制 -->
+    <style name="Theme.Pfa" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
