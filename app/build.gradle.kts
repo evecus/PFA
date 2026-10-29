@@ -16,6 +16,18 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val envStore = System.getenv("RELEASE_STORE_FILE")
+            if (envStore != null && file(envStore).exists()) {
+                storeFile = file(envStore)
+                storePassword = System.getenv("RELEASE_STORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -23,17 +35,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-    }
-    
-    signingConfigs {
-        release {
-            def envStore = System.getenv("RELEASE_STORE_FILE")
+            // 有 keystore 时使用 release 签名，否则回退到 debug 签名（本地未配置密钥也能编过）
+            val envStore = System.getenv("RELEASE_STORE_FILE")
             if (envStore != null && file(envStore).exists()) {
-                storeFile file(envStore)
-                storePassword System.getenv("RELEASE_STORE_PASSWORD")
-                keyAlias System.getenv("RELEASE_KEY_ALIAS")
-                keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
